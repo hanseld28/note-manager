@@ -1,24 +1,54 @@
-import logo from './logo.svg';
-import './App.css';
+import { useMemo, useState } from "react";
+import { Route, Switch } from "react-router";
+import { BrowserRouter as Router } from "react-router-dom";
+import AuthenticationPage from "./components/authentication/AuthenticationPage";
+import NotePage from "./components/note/NotePage";
+import AuthContext from "./contexts/AuthContext";
+import UserContext from "./contexts/UserContext";
 
 function App() {
+  const [user, setUser] = useState({
+    id: null,
+    name: "",
+    login: "",
+    password: "",
+  });
+  
+  const [authenticated, setAuthenticated] = useState(false);
+
+  const userProviderValue = useMemo(() => {
+    return {
+      user, 
+      setUser
+    }
+  }, [user, setUser]);
+
+  const authenticatedProviderValue = useMemo(() => {
+    return {
+      authenticated, 
+      setAuthenticated
+    }
+  }, [authenticated, setAuthenticated]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AuthContext.Provider value={authenticatedProviderValue}>
+      <UserContext.Provider value={userProviderValue}>
+        <Router>
+          <Switch>
+            <Route 
+              exact
+              path="/" 
+              component={AuthenticationPage}
+            />
+            <Route 
+              exact
+              path="/notes" 
+              component={NotePage}
+            />
+          </Switch>
+        </Router>
+      </UserContext.Provider>
+    </AuthContext.Provider>
   );
 }
 

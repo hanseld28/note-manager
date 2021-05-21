@@ -1,0 +1,39 @@
+{
+    "users": [
+      { "id": 1, "name": "Hansel Donizete", "login": "admin", "password": "admin12345" }
+    ],
+    "notes": [
+        {
+            "id": 1,
+            "title": "teste note",
+            "description": "teste description",
+            "date": "20/05/2021 22:05:05"
+        },
+        {
+            "id": 2,
+            "title": "teste note",
+            "description": "teste description",
+            "date": "20/05/2021 22:05:05"
+        },
+        {
+            "id": 3,
+            "title": "teste note",
+            "description": "teste description",
+            "date": "20/05/2021 22:05:05"
+        }
+    ],
+    "categories": [
+        {
+            "id": 1,
+            "description": "Geral"
+        },
+        {
+            "id": 2,
+            "description": "Pessoal"
+        },
+        {
+            "id": 3,
+            "description": "Trabalho"
+        }
+    ]
+}

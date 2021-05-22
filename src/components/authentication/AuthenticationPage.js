@@ -129,6 +129,7 @@ export default function AuthenticationPage(props) {
                                                     label="Senha"
                                                     name="password"
                                                     variant="outlined"
+                                                    type="password"
                                                     size="small"
                                                     value={user?.password}
                                                     onChange={handleChange("password")}

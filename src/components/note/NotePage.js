@@ -4,7 +4,7 @@ import {
     SearchRounded as SearchRoundedIcon,
 } from "@material-ui/icons";
 import moment from "moment";
-import React, { useLayoutEffect, useState } from "react";
+import React, { useCallback, useLayoutEffect, useState } from "react";
 
 const getDateTimeFromNow = () => moment().format('DD/MM/YYYY HH:MM:SS');
 
@@ -15,11 +15,10 @@ export default function NotePage(props) {
         id: null,
         title: "",
         description: "",
-        category: 1,
+        category: "",
         date: null,
     });
 
-    const [isCreate, setIsCreate] = useState(false);
     const [isUpdate, setIsUpdate] = useState(false);
 
     const [openBackdrop, setOpenBackdrop] = useState(false);
@@ -47,35 +46,59 @@ export default function NotePage(props) {
         setCategories([...foundCategories]);
     };
 
-    const saveNote = async () => {
-        console.log(currentNote)
-        const saved = await (
-            await fetch(`http://localhost:3005/notes`, {
-                method: "POST",
-                body: { ...currentNote }
-            })
-        ).json() || [];
-
-        setNotes([...notes, saved]);
-        setCurrentNote(saved);
-    };
-
-    const handleCreateNote = async (event) => {
+    const handleCreateNote = useCallback((event) => {
         event.preventDefault();
+
+        const createNote = async () => {
+            const saved = await (
+                await fetch(`http://localhost:3005/notes`, {
+                    method: "POST",
+                    body: { ...currentNote }
+                })
+            ).json() || [];
+    
+            setNotes([...notes, saved]);
+            setCurrentNote(saved);
+        };
+
         setOpenBackdrop(true);
 
         setCurrentNote({
+            ...currentNote,
             id: null,
-            title: "[DRAFT] Nota",
+            title: "[DRAFT]",
             description: "",
             category: 1,
             date: getDateTimeFromNow(),
         });
-
+        
+        createNote();
         setOpenBackdrop(false);
-        setIsCreate(true);
-        saveNote();
-    }
+        setIsUpdate(true);
+    }, [currentNote, notes]);
+
+    const handleNoteItemClick = useCallback((id) => (event) => {
+        event.preventDefault();
+        setCurrentNote(notes.filter(note => note.id === id)[0]);
+        setIsUpdate(true);
+    }, [notes]);
+
+    const handleNoteChange = useCallback((prop) => ({ target: { value }}) => {
+        const saveNote = async () => {
+            const saved = await (
+                await fetch(`http://localhost:3005/notes/${currentNote?.id}`, {
+                    method: "PUT",
+                    body: { ...currentNote }
+                })
+            ).json() || [];
+    
+            setNotes([...notes, saved]);
+            setCurrentNote(saved);
+        };
+
+        setCurrentNote({ ...currentNote, [prop]: value });
+        saveNote(currentNote);
+    }, [currentNote, notes]);
 
     return (
         <>
@@ -83,6 +106,7 @@ export default function NotePage(props) {
                 maxWidth="md"
             >
                 <Grid
+                    item
                     container
                     justify="center"
                     alignItems="flex-start"
@@ -137,9 +161,11 @@ export default function NotePage(props) {
                             <List dense={true} style={{ width: "100%" }}>
                                 {notes.map(({ id, title, date }) => (
                                     <ListItem
+                                        button
                                         key={id}
                                         id={id}
                                         style={{ width: "100%" }}
+                                        onClick={handleNoteItemClick(id)}    
                                     >
                                         <ListItemText
                                             primary={title}
@@ -174,7 +200,8 @@ export default function NotePage(props) {
                                     variant="outlined" 
                                     label="Título"
                                     value={currentNote.title}
-                                    disabled={!isCreate && !isUpdate}
+                                    onChange={handleNoteChange("title")}
+                                    disabled={!isUpdate}
                                 />
                             </Grid>
                             <Grid
@@ -190,7 +217,8 @@ export default function NotePage(props) {
                                     variant="outlined"
                                     size="small"
                                     value={currentNote.category}
-                                    disabled={!isCreate && !isUpdate}
+                                    onChange={handleNoteChange("category")}
+                                    disabled={!isUpdate}
                                 >
                                     {categories.map(({ id, description }) => (
                                         <MenuItem 
@@ -210,7 +238,7 @@ export default function NotePage(props) {
                                 alignItems="center"
                                 xs={4}
                             >
-                                <Typography variant={!isCreate && !isUpdate ? "srOnly" : "subtitle2"} >
+                                <Typography variant={!isUpdate ? "srOnly" : "subtitle2"} >
                                     {currentNote.date}
                                 </Typography>
                             </Grid>
@@ -226,7 +254,8 @@ export default function NotePage(props) {
                                 multiline
                                 rows={30}
                                 value={currentNote.description}
-                                disabled={!isCreate && !isUpdate}
+                                onChange={handleNoteChange("description")}
+                                disabled={!isUpdate}
                             />
                         </Grid>
                     </Grid>

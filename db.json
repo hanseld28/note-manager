@@ -5,6 +5,12 @@
       "name": "Hansel Donizete",
       "login": "admin",
       "password": "admin12345"
+    },
+    {
+      "id": 2,
+      "name": "Anônimo",
+      "login": "guest",
+      "password": "guest12345"
     }
   ],
   "notes": [

@@ -1,10 +1,13 @@
-import { Backdrop, CircularProgress, Container, Grid, IconButton, InputAdornment, List, ListItem, ListItemText, MenuItem, TextField, Typography } from "@material-ui/core";
+import { Backdrop, Button, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, InputAdornment, List, ListItem, ListItemText, MenuItem, Slide, TextField, Tooltip, Typography } from "@material-ui/core";
 import { 
     AddCircle as AddCircleIcon, 
+    Edit, 
+    Lock, 
+    Save, 
     SearchRounded as SearchRoundedIcon,
 } from "@material-ui/icons";
 import moment from "moment";
-import React, { useCallback, useLayoutEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 
 const getDateTimeFromNow = () => moment().format('DD/MM/YYYY HH:MM:SS');
 
@@ -18,10 +21,15 @@ export default function NotePage(props) {
         category: "",
         date: null,
     });
-
     const [isUpdate, setIsUpdate] = useState(false);
+    const [isSelected, setIsSelected] = useState(false);
 
+    const [openConfirmDeleteDialog, setOpenConfirmDeleteDialog] = useState(false);
     const [openBackdrop, setOpenBackdrop] = useState(false);
+
+    const Transition = React.forwardRef(function Transition(props, ref) {
+        return <Slide direction="up" ref={ref} {...props} />;
+    });
 
     useLayoutEffect(() => {
         setOpenBackdrop(true);
@@ -46,59 +54,122 @@ export default function NotePage(props) {
         setCategories([...foundCategories]);
     };
 
-    const handleCreateNote = useCallback((event) => {
-        event.preventDefault();
+    const saveNote = async () => {
+        const saved = await (
+            await fetch(`http://localhost:3005/notes/${currentNote?.id}`, {
+                method: "PUT",
+                headers: {
+                    'Content-type': 'application/json; charset=UTF-8'
+                },
+                body: JSON.stringify({ ...currentNote }),
+            })
+        ).json() || [];
 
-        const createNote = async () => {
-            const saved = await (
-                await fetch(`http://localhost:3005/notes`, {
-                    method: "POST",
-                    body: { ...currentNote }
-                })
-            ).json() || [];
-    
-            setNotes([...notes, saved]);
-            setCurrentNote(saved);
-        };
+        fetchAllNotes();
+        setCurrentNote(saved);
+    };
 
-        setOpenBackdrop(true);
+    const createNote = async () => {
+        const saved = await (
+            await fetch(`http://localhost:3005/notes`, {
+                method: "POST",
+                headers: {
+                    'Content-type': 'application/json; charset=UTF-8'
+                },
+                body: JSON.stringify({
+                    id: null,
+                    title: "[DRAFT]",
+                    description: "",
+                    category: 1,
+                    date: getDateTimeFromNow(),
+                }),
+            })
+        ).json() || [];
+
+        setCurrentNote(() => saved);
+        setNotes(() => [...notes, saved]);
+    };
+
+    const deleteNote = async () => {
+       await fetch(`http://localhost:3005/notes/${currentNote?.id}`, {
+            method: "DELETE",
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8'
+            },
+        });
+
+        const deletedNoteId = currentNote?.id;
 
         setCurrentNote({
-            ...currentNote,
             id: null,
-            title: "[DRAFT]",
+            title: "",
             description: "",
-            category: 1,
-            date: getDateTimeFromNow(),
+            category: "",
+            date: null,
         });
-        
-        createNote();
-        setOpenBackdrop(false);
-        setIsUpdate(true);
-    }, [currentNote, notes]);
+        setNotes(() => [...notes.filter((note) => note.id !== deletedNoteId)]);
+    };
 
-    const handleNoteItemClick = useCallback((id) => (event) => {
-        event.preventDefault();
+    const selecteNoteById = (id) => {
         setCurrentNote(notes.filter(note => note.id === id)[0]);
+    };
+
+    const handleNoteChange = (prop) => ({ target: { value }}) => {
+        setCurrentNote(previousNote => ({ ...previousNote, [prop]: value }));
+    };
+
+    const handleCreateNote = async (event) => {
+        event.preventDefault();
+
+        setOpenBackdrop(true);
+        await createNote();
+        setOpenBackdrop(false);
+        setIsSelected(true);
         setIsUpdate(true);
-    }, [notes]);
+    };
 
-    const handleNoteChange = useCallback((prop) => ({ target: { value }}) => {
-        const saveNote = async () => {
-            const saved = await (
-                await fetch(`http://localhost:3005/notes/${currentNote?.id}`, {
-                    method: "PUT",
-                    body: { ...currentNote }
-                })
-            ).json() || [];
-    
-            setNotes([...notes, saved]);
-            setCurrentNote(saved);
-        };
+    const handleNoteItemClick = (id) => (event) => {
+        event.preventDefault();
+        selecteNoteById(id);
+        setIsUpdate(false);
+        setIsSelected(true);
+    };
 
-        setCurrentNote({ ...currentNote, [prop]: value });
-        saveNote(currentNote);
-    }, [currentNote, notes]);
+    const handleEdit = (event) => {
+        setIsUpdate(true);
+    }
+
+    const handleLock = (event) => {
+        setIsUpdate(false);
+    }
+
+    const handleSaveCurrentChanges = async (event) => {
+        event.preventDefault();
+
+        setOpenBackdrop(true);
+        await saveNote();
+        setOpenBackdrop(false);
+        setIsUpdate(false);
+    };
+
+    const handleDeleteNoteConfirmation = (id) => (event) => {
+        if (event.ctrlKey && event.shiftKey) {
+            selecteNoteById(id);
+            setOpenConfirmDeleteDialog(true);
+        }
+    };
+
+    const handleCloseConfirmDeleteDialog = (event) => {
+        setOpenConfirmDeleteDialog(false);
+    };
+
+    const handleDeleteNote = async (event) => {
+        handleCloseConfirmDeleteDialog(event);
+        setOpenBackdrop(true);
+        await deleteNote();
+        setOpenBackdrop(false);
+        setIsSelected(false);
+    };
 
     return (
         <>
@@ -140,6 +211,7 @@ export default function NotePage(props) {
                                         </InputAdornment>
                                     ),
                                 }}
+                                disabled={isUpdate}
                             />
                         </Grid>
                         <Grid
@@ -149,10 +221,16 @@ export default function NotePage(props) {
                             alignItems="center"
                         >
                             <Typography variant="subtitle1" style={{ paddingLeft: "0.9rem" }}>TODAS AS NOTAS</Typography>
-                            <IconButton
-                                children={<AddCircleIcon />}
-                                onClick={handleCreateNote}
-                            />
+                            <Tooltip
+                                title="Criar Nota"
+                            >
+                                <IconButton
+                                    onClick={handleCreateNote}
+                                    disabled={isUpdate}
+                                >
+                                    <AddCircleIcon color={isUpdate ? "disabled" : "primary"} />
+                                </IconButton>
+                            </Tooltip>
                         </Grid>
                         <Grid
                             item
@@ -165,7 +243,9 @@ export default function NotePage(props) {
                                         key={id}
                                         id={id}
                                         style={{ width: "100%" }}
-                                        onClick={handleNoteItemClick(id)}    
+                                        onClick={handleNoteItemClick(id)}
+                                        onMouseDown={handleDeleteNoteConfirmation(id)}
+                                        disabled={isUpdate}
                                     >
                                         <ListItemText
                                             primary={title}
@@ -199,7 +279,7 @@ export default function NotePage(props) {
                                     style={{ width: "100%" }}
                                     variant="outlined" 
                                     label="Título"
-                                    value={currentNote.title}
+                                    value={currentNote?.title}
                                     onChange={handleNoteChange("title")}
                                     disabled={!isUpdate}
                                 />
@@ -216,7 +296,7 @@ export default function NotePage(props) {
                                     label="Categoria"
                                     variant="outlined"
                                     size="small"
-                                    value={currentNote.category}
+                                    value={currentNote?.category}
                                     onChange={handleNoteChange("category")}
                                     disabled={!isUpdate}
                                 >
@@ -234,13 +314,62 @@ export default function NotePage(props) {
                                 style={{ width: "100%" }}
                                 item
                                 container
-                                justify="flex-end"
+                                justify={isUpdate ? "space-between" : "flex-end"}
                                 alignItems="center"
+                                spacing={1}
                                 xs={4}
                             >
-                                <Typography variant={!isUpdate ? "srOnly" : "subtitle2"} >
-                                    {currentNote.date}
-                                </Typography>
+                                {isUpdate &&
+                                    <Grid item xs={6}>
+                                        <Tooltip
+                                            title="Travar"
+                                        >
+                                            <Button 
+                                                style={{ width: "100%" }}
+                                                variant="outlined"
+                                                color="inherit"
+                                                onClick={handleLock}
+                                            >
+                                                <Lock />
+                                            </Button>
+                                        </Tooltip>
+                                    </Grid>
+                                }
+                                {isUpdate &&   
+                                    <Grid item xs={6}>
+                                        <Tooltip
+                                            title="Salvar"
+                                        >
+                                            <Button
+                                                style={{ width: "100%" }}
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={handleSaveCurrentChanges}
+                                            >
+                                                <Save />
+                                            </Button>
+                                        </Tooltip>
+                                    </Grid>
+                                }
+                                {isSelected && !isUpdate && 
+                                    <Grid item xs={6}>
+                                        <Typography variant="body2" style={{ color: "gray" }}>
+                                            {currentNote?.date}
+                                        </Typography>
+                                    </Grid>
+                                }
+                                {isSelected && !isUpdate &&
+                                    <Grid item xs={6}>
+                                        <Button 
+                                            style={{ width: "100%" }}
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={handleEdit}
+                                        >
+                                            <Edit />
+                                        </Button>
+                                    </Grid>
+                                }
                             </Grid>
                         </Grid>
                         <Grid
@@ -253,7 +382,7 @@ export default function NotePage(props) {
                                 variant="outlined"
                                 multiline
                                 rows={30}
-                                value={currentNote.description}
+                                value={currentNote?.description}
                                 onChange={handleNoteChange("description")}
                                 disabled={!isUpdate}
                             />
@@ -261,6 +390,32 @@ export default function NotePage(props) {
                     </Grid>
                 </Grid>
             </Container>
+            {openConfirmDeleteDialog &&
+                <Dialog
+                    open={openConfirmDeleteDialog}
+                    TransitionComponent={Transition}
+                    onClose={handleCloseConfirmDeleteDialog}
+                    aria-labelledby="alert-dialog-slide-title"
+                    aria-describedby="alert-dialog-slide-description"
+                >
+                    <DialogTitle id="alert-dialog-slide-title">
+                        {`Tem certeza que deseja excluir a nota "${currentNote?.title}"?`}
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText id="alert-dialog-slide-description">
+                            Ao clicar em confirmar a nota será excluída permanentemente.
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseConfirmDeleteDialog} color="primary">
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleDeleteNote} color="secondary">
+                            Confirmar
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
             <Backdrop open={openBackdrop}>
                 <CircularProgress color="primary" />
             </Backdrop>

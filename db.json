@@ -16,7 +16,7 @@
   "notes": [
     {
       "id": 1,
-      "title": "[EXEMPLO] Nota geral",
+      "title": "[EXEMPLO] Nota geral ",
       "description": "Descrição de exemplo da nota geral...",
       "category": 1,
       "date": "20/05/2021 22:05:05"
@@ -34,6 +34,20 @@
       "description": "Descrição de exemplo da nota de trabalho",
       "category": 3,
       "date": "20/05/2021 22:05:05"
+    },
+    {
+      "id": 4,
+      "title": "Fix UI layout",
+      "description": "Corrigir o layout da aplicação.",
+      "category": 3,
+      "date": "22/05/2021 18:05:85"
+    },
+    {
+      "id": 5,
+      "title": "Escrever Relatórios",
+      "description": "Fazer os relatórios pendentes.\n\n---\n[TOTAL] 8 relatórios",
+      "category": 4,
+      "date": "22/05/2021 18:05:35"
     }
   ],
   "categories": [
@@ -48,6 +62,10 @@
     {
       "id": 3,
       "description": "Trabalho"
+    },
+    {
+      "id": 4,
+      "description": "Estudo"
     }
   ]
 }

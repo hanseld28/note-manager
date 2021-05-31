@@ -1,42 +1,53 @@
-import { Button, Card, CardContent, Container, Grid, TextField, Typography } from "@material-ui/core";
-import React, { useContext, useState } from "react";
+import { Backdrop, Button, Card, CardContent, CircularProgress, Container, Grid, TextField, Typography } from "@material-ui/core";
+import React, { useContext } from "react";
 import { Redirect } from "react-router-dom";
 import AuthContext from "../../contexts/AuthContext";
-import UserContext from "../../contexts/UserContext";
 
 export default function AuthenticationPage(props) {
-    const { authenticated, setAuthenticated } = useContext(AuthContext);
-    const { user, setUser } = useContext(UserContext);
-    const [error, setError] = useState(false);
-
+    const { authState, authDispatch } = useContext(AuthContext);
+    const { login, password, isLoading, error, isLoggedIn } = authState;
 
     const handleChange = (prop) => ({ target: { value }}) => {
-        setUser({ ...user, [prop]: value });
-        setError(false);
+        authDispatch({ 
+            type: "field", 
+            fieldName: prop,
+            payload: value,
+        });
+        authDispatch({ 
+            type: "clearError", 
+        });
     };
 
     const handleAuthentication = async (event) => {
         event.preventDefault();
+        
+        authDispatch({
+            type: "login",
+        });
 
-        if (user?.login !== "" && user?.password !== "") {
-            const [foundUser] = await (
-                await fetch(`http://localhost:3005/users?login=${user?.login}`)
-            ).json();
+        const handle = async () => {
+            if (login !== "" && password !== "") {
+                const [foundUser] = await (
+                    await fetch(`http://localhost:3005/users?login=${login}`)
+                ).json();
 
-            console.log(foundUser, user)
-            const isValid = (
-                foundUser?.login === user?.login 
-                && foundUser?.password === user?.password
-            );
+                console.log(foundUser, login)
+                const isValid = (
+                    foundUser?.login === login 
+                    && foundUser?.password === password
+                );
 
-            if (isValid) {
-                setUser({ ...foundUser });
-                setAuthenticated(true);
+                if (isValid) {
+                    authDispatch({ type: 'success' });
+                } else {
+                    authDispatch({ type: 'error' });
+                }
             } else {
-                setError(true);
+                authDispatch({ type: 'error' });
             }
-        }
+        };
 
+        setTimeout(handle, 1500);
     };
 
     return (
@@ -116,9 +127,10 @@ export default function AuthenticationPage(props) {
                                                     name="login"
                                                     variant="outlined"
                                                     size="small"
-                                                    value={user?.login}
+                                                    value={login}
                                                     onChange={handleChange("login")}
-                                                    error={error}
+                                                    error={error?.exists}
+                                                    disabled={isLoading}
                                                     required
                                                 />
                                             </Grid>
@@ -131,9 +143,10 @@ export default function AuthenticationPage(props) {
                                                     variant="outlined"
                                                     type="password"
                                                     size="small"
-                                                    value={user?.password}
+                                                    value={password}
                                                     onChange={handleChange("password")}
-                                                    error={error}
+                                                    error={error?.exists}
+                                                    disabled={isLoading}
                                                     required
                                                 />
                                             </Grid>
@@ -152,6 +165,7 @@ export default function AuthenticationPage(props) {
                                                         variant="contained" 
                                                         color="primary" 
                                                         size="small"
+                                                        disabled={isLoading}
                                                     >
                                                         Entrar
                                                     </Button>
@@ -165,7 +179,10 @@ export default function AuthenticationPage(props) {
                     </form>
                 </Grid>
             </Grid>
-            {authenticated && <Redirect to="/notes" />}
+            <Backdrop open={isLoading} style={{ zIndex: 1 }}>
+                <CircularProgress color="primary" />
+            </Backdrop>
+            {isLoggedIn && <Redirect to="/notes" />}
         </Container>
     );
 }

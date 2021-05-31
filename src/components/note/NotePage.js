@@ -2,16 +2,22 @@ import { Backdrop, Button, CircularProgress, Container, Dialog, DialogActions, D
 import { 
     AddCircle as AddCircleIcon, 
     Edit, 
+    ExitToApp, 
     Lock, 
     Save, 
     SearchRounded as SearchRoundedIcon,
 } from "@material-ui/icons";
 import moment from "moment";
-import React, { useLayoutEffect, useState } from "react";
+import React, { useContext, useLayoutEffect, useState } from "react";
+import { Redirect } from "react-router";
+import AuthContext from "../../contexts/AuthContext";
 
 const getDateTimeFromNow = () => moment().format('DD/MM/YYYY HH:MM:SS');
 
 export default function NotePage(props) {
+    const { authState, authDispatch } = useContext(AuthContext);
+    const { login, isLoggedIn } = authState;
+
     const [categories, setCategories] = useState([]);
     const [notes, setNotes] = useState([]);
     const [currentNote, setCurrentNote] = useState({
@@ -171,11 +177,37 @@ export default function NotePage(props) {
         setIsSelected(false);
     };
 
+    const handleLogOut = (event) => {
+        console.log("aa")
+        authDispatch({
+            type: "logOut",
+        });
+    }
     return (
         <>
             <Container
                 maxWidth="md"
             >
+                <Grid
+                    item
+                    container
+                    justify="flex-end"
+                >
+                    <Grid
+                        item
+                    >
+                        <Tooltip
+                            title="Sair"
+                        >
+                            <IconButton
+                                color="secondary" 
+                                onClick={handleLogOut}
+                            >
+                                <ExitToApp />
+                            </IconButton>
+                        </Tooltip>
+                    </Grid>
+                </Grid>
                 <Grid
                     item
                     container
@@ -416,9 +448,10 @@ export default function NotePage(props) {
                     </DialogActions>
                 </Dialog>
             }
-            <Backdrop open={openBackdrop}>
+            <Backdrop open={openBackdrop} style={{ zIndex: 1 }}>
                 <CircularProgress color="primary" />
             </Backdrop>
+            {!isLoggedIn && <Redirect to="/" />}
         </>
     );
 }

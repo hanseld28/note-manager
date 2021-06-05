@@ -1,4 +1,5 @@
 import { Backdrop, Button, Card, CardContent, CircularProgress, Container, Grid, TextField, Typography } from "@material-ui/core";
+import { Note as NoteIcon } from "@material-ui/icons";
 import React, { useContext } from "react";
 import { Redirect } from "react-router-dom";
 import AuthContext from "../../contexts/AuthContext";
@@ -8,19 +9,19 @@ export default function AuthenticationPage(props) {
     const { login, password, isLoading, error, isLoggedIn } = authState;
 
     const handleChange = (prop) => ({ target: { value }}) => {
-        authDispatch({ 
-            type: "field", 
+        authDispatch({
+            type: "field",
             fieldName: prop,
             payload: value,
         });
-        authDispatch({ 
-            type: "clearError", 
+        authDispatch({
+            type: "clearError",
         });
     };
 
     const handleAuthentication = async (event) => {
         event.preventDefault();
-        
+
         authDispatch({
             type: "login",
         });
@@ -33,7 +34,7 @@ export default function AuthenticationPage(props) {
 
                 console.log(foundUser, login)
                 const isValid = (
-                    foundUser?.login === login 
+                    foundUser?.login === login
                     && foundUser?.password === password
                 );
 
@@ -87,8 +88,13 @@ export default function AuthenticationPage(props) {
                             >
                                 <Grid
                                     item
+                                    container
+                                    justify="center"
+                                    alignItems="center"
+                                    direction={"row"}
                                 >
-                                    <Typography variant="h3">
+                                    <NoteIcon color="primary" />
+                                    <Typography style={{ marginLeft: "5px", fontWeight: "bold" }} variant="h4" color="primary">
                                         Note Manager
                                     </Typography>
                                 </Grid>
@@ -96,7 +102,7 @@ export default function AuthenticationPage(props) {
                                     item
                                 >
                                     <Typography variant="subtitle2" color="textSecondary">
-                                        Entre na sua conta para gerenciar suas notas
+                                        Seu gerenciador de notas
                                     </Typography>
                                 </Grid>
                             </Grid>
@@ -106,7 +112,7 @@ export default function AuthenticationPage(props) {
                                 justify="center"
                                 alignItems="center"
                                 direction={"column"}
-                                spacing={2}                
+                                spacing={2}
                                 style={{ marginTop: "2rem" }}
                             >
                                 <Card variant="elevation">
@@ -117,12 +123,12 @@ export default function AuthenticationPage(props) {
                                             justify="center"
                                             alignItems="center"
                                             direction={"column"}
-                                            spacing={2}                
+                                            spacing={2}
                                         >
                                             <Grid
                                                 item
                                             >
-                                                <TextField 
+                                                <TextField
                                                     label="Login"
                                                     name="login"
                                                     variant="outlined"
@@ -137,7 +143,7 @@ export default function AuthenticationPage(props) {
                                             <Grid
                                                 item
                                             >
-                                                <TextField 
+                                                <TextField
                                                     label="Senha"
                                                     name="password"
                                                     variant="outlined"
@@ -161,9 +167,9 @@ export default function AuthenticationPage(props) {
                                                 >
                                                     <Button
                                                         type="submit"
-                                                        style={{ width: "100%"}} 
-                                                        variant="contained" 
-                                                        color="primary" 
+                                                        style={{ width: "100%"}}
+                                                        variant="contained"
+                                                        color="primary"
                                                         size="small"
                                                         disabled={isLoading}
                                                     >
